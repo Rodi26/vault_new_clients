@@ -36,9 +36,9 @@ is_active_during_period () {
 }
 
 function write_data_to_output_file () {
-     #curl -s --header "X-Vault-Token: ${VAULT_TOKEN}" --header "X-Vault-Namespace: ${1}"  -X GET  "${VAULT_ADDR}/v1/identity/entity/id/${2}" | jq .data | sed 's/[],[]//g'  >> $output_file
+    #curl -s --header "X-Vault-Token: ${VAULT_TOKEN}" --header "X-Vault-Namespace: ${1}"  -X GET  "${VAULT_ADDR}/v1/identity/entity/id/${2}" | jq .data | sed 's/[],[]//g'  >> $output_file
     my_data=( `curl -s --header "X-Vault-Token: ${VAULT_TOKEN}" --header "X-Vault-Namespace: ${1}"  -X GET  "${VAULT_ADDR}/v1/identity/entity/id/${2}" | jq -c .data ` )
-    #echo $my_data
+    echo $my_data
     my_id=( `echo $my_data | jq -r '.id' ` )
     my_name=( `echo $my_data | jq -r '.name' ` )
     my_creation_time=( `echo $my_data | jq -r '.creation_time' ` )
@@ -58,13 +58,15 @@ function return_entites {
         for entities in "${entities_arr[@]}"
         do
             if [[ "$entities" != "null" ]]; then 
-                #echo 'entities' ${entities//\"} 
+                echo 'entities' ${entities//\"} 
                 verifies_data_time "${1}" "${entities//\"}"
                 if [[ "$New" = "1" ]]; then
                     NEW_ENTITIES=${entities}
                     write_data_to_output_file "${1}" "${entities//\"}"
-                    
                 fi   
+            else
+                    echo 'X-Vault-Namespace in return_entites:' ${1}
+                    echo 'empty entities'
             fi
         done
 } 
@@ -77,7 +79,7 @@ do
         return_entites "$2"
         for sub_namespace in "${namespaces_arr[@]}" 
         do  
-            #echo 'X-Vault-Namespace 2:' "$2${sub_namespace//\"}"
+            echo 'X-Vault-Namespace 2:' "$2${sub_namespace//\"}"
             return_entites "$2${sub_namespace//\"}"
             go_one_ns_deeper "${sub_namespace//\"}" "$2${sub_namespace//\"}"
         done
